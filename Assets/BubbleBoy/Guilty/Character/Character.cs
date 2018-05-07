@@ -65,90 +65,28 @@ namespace GuiltyCharacter
         }
         #endregion
 
-        #region Character Variables
-        public enum LocomotionType
-        {
-            FreeWithStrafe,
-            OnlyStrafe,
-            OnlyFree
-        }
-
-        [Header("--- Locomotion Setup ---")]
-
-        public LocomotionType locomotionType = LocomotionType.FreeWithStrafe;
-        //[Tooltip("The character Head will follow where you look at, UNCHECK if you are using TopDown or 2.5D")]
-        //[SerializeField]
-        //protected bool headTracking = true;
-
-        [Tooltip("Use this to rotate the character using the World axis, or false to use the camera axis - CHECK for Isometric Camera")]
+        [Header("Character Movement Info")]
+        [LabelOverride("Move Layer Info")]
         [SerializeField]
-        protected bool rotateByWorld = false;
+        [Tooltip("Create MoveLayerInfo info: right click folder Create->Character->MoveLayerInfo")]
+        protected MoveLayerInfo mli;
 
-        [Tooltip("Speed of the rotation on free directional movement")]
+        [Header("Character Movement Info")]
+        [LabelOverride("Character Info")]
         [SerializeField]
-        protected float rotationSpeed = 8f;
+        [Tooltip("Create character info: right click folder Create->Character->CharacterInfo")]
+        protected CharacterInfo ci;
 
-        [Tooltip("Add extra speed for the locomotion movement, keep this value at 0 if you want to use only root motion speed.")]
         [SerializeField]
-        protected float extraMoveSpeed = 0f;
+        protected CameraState cameraState;
 
-        [Tooltip("Add extra speed for the strafe movement, keep this value at 0 if you want to use only root motion speed.")]
-        [SerializeField]
-        protected float extraStrafeSpeed = 0f;
-
-        [Header("--- Grounded Setup ---")]
-        [Tooltip("Distance to became not grounded")]
-        [SerializeField]
-        protected float groundCheckDistance = 0.5f;
-        protected float groundDistance;
-        public RaycastHit groundHit;
-
-        [Tooltip("ADJUST IN PLAY MODE - Offset height limit for sters - GREY Raycast in front of the legs")]
-        public float stepOffsetEnd = 0.45f;
-        [Tooltip("ADJUST IN PLAY MODE - Offset height origin for sters, make sure to keep slight above the floor - GREY Raycast in front of the legs")]
-        public float stepOffsetStart = 0.05f;
-        [Tooltip("Higher value will result jittering on ramps, lower values will have difficulty on steps")]
-        public float stepSmooth = 2f;
-
-        [Tooltip("Max angle to walk")]
-        [SerializeField]
-        protected float slopeLimit = 45f;
-
-        [Tooltip("Apply extra gravity when the character is not grounded")]
-        [SerializeField]
-        protected float extraGravity = 4f;
-
-        [Tooltip("Select a VerticalVelocity to turn on Land High animation")]
-        [SerializeField]
-        protected float landHighVel = -5f;
-
-        [Tooltip("Turn the Ragdoll On when falling at high speed (check VerticalVelocity) - leave the value with 0 if you don't want this feature")]
-        [SerializeField]
-        protected float ragdollVel = -8f;
-
-
-
-        protected float moveSet_ID;
         protected GameObject currentCollectable;
-        #endregion
 
-
-        #region Camera Variables
-        // generic string to change the CameraState
-        [HideInInspector] public string customCameraState;
-        // generic string to change the CameraPoint of the Fixed Point Mode
-        [HideInInspector] public string customlookAtPoint;
-        // generic bool to change the CameraState
-        [HideInInspector] public bool changeCameraState;
-        // generic bool to know if the state will change with or without lerp
-        [HideInInspector] public bool smoothCameraState;
-        // generic variables to find the correct direction 
-        [HideInInspector] public Quaternion freeRotation;
-        [HideInInspector] public bool keepDirection;
-        [HideInInspector] public Vector2 oldInput;
-        [HideInInspector] public Vector3 cameraForward;
-        [HideInInspector] public Vector3 cameraRight;
-        #endregion
+        //public void Awake()
+        //{
+        //    mli = Instantiate(mli);
+        //    ci = Instantiate(ci);
+        //}
 
         public void UpdateMotor()
         {
@@ -205,8 +143,8 @@ namespace GuiltyCharacter
         {
             get
             {
-                if (locomotionType.Equals(LocomotionType.OnlyStrafe)) strafing = true;
-                return !strafing && !usingLadder && !landHigh && !locomotionType.Equals(LocomotionType.OnlyStrafe) || locomotionType.Equals(LocomotionType.OnlyFree);
+                if (ci.locomotionType.Equals(LocomotionType.OnlyStrafe)) strafing = true;
+                return !strafing && !usingLadder && !landHigh && !ci.locomotionType.Equals(LocomotionType.OnlyStrafe) || ci.locomotionType.Equals(LocomotionType.OnlyFree);
             }
         }
 
@@ -216,9 +154,9 @@ namespace GuiltyCharacter
         /// </summary>
         void CheckRagdoll()
         {
-            if (ragdollVel == 0) return;
+            if (ci.ragdollVel == 0) return;
 
-            if (verticalVelocity <= ragdollVel && groundDistance <= 0.1f)
+            if (verticalVelocity <= ci.ragdollVel && ci.groundDistance <= 0.1f)
                 transform.SendMessage("ActivateRagdoll", SendMessageOptions.DontRequireReceiver);
         }
 
@@ -253,34 +191,35 @@ namespace GuiltyCharacter
             CheckGroundDistance();
 
             // change the physics material to very slip when not grounded
-            _capsuleCollider.material = (onGround && GroundAngle() < slopeLimit) ? frictionPhysics : slippyPhysics;
+            _capsuleCollider.material = (onGround && GroundAngle() < ci.slopeLimit) ? frictionPhysics : slippyPhysics;
+
             // we don't want to stick the character grounded if one of these bools is true
-            bool groundStickConditions = !jumpOver && !stepUp && !climbUp && !usingLadder && !hitReaction && !pushButton;
+            bool groundStickConditions = !jumpOver && !stepUp && !climbUp && !usingLadder && !hitReaction;
 
             if (groundStickConditions)
             {
                 var onStep = StepOffset();
 
-                if (groundDistance <= 0.05f)
+                if (ci.groundDistance <= 0.05f)
                 {
                     onGround = true;
                     // keeps the character grounded and prevents bounceness on ramps
-                    //if (!onStep) _rigidbody.velocity = Vector3.ProjectOnPlane(_rigidbody.velocity, groundHit.normal);
+                    //if (!onStep) _rigidbody.velocity = Vector3.ProjectOnPlane(_rigidbody.velocity, ci.groundHit.normal);
                     Sliding();
                 }
                 else
                 {
-                    if (groundDistance >= groundCheckDistance)
+                    if (ci.groundDistance >= ci.groundCheckDistance)
                     {
                         onGround = false;
                         // check vertical velocity
                         verticalVelocity = _rigidbody.velocity.y;
                         // apply extra gravity when falling
                         if (!onStep && !roll)
-                            transform.position -= Vector3.up * (extraGravity * Time.deltaTime);
+                            transform.position -= Vector3.up * (ci.extraGravity * Time.deltaTime);
                     }
                     else if (!onStep && !roll && !jump)
-                        transform.position -= Vector3.up * (extraGravity * Time.deltaTime);
+                        transform.position -= Vector3.up * (ci.extraGravity * Time.deltaTime);
                 }
             }
         }
@@ -292,16 +231,16 @@ namespace GuiltyCharacter
             RaycastHit hitinfo;
             Ray ray = new Ray(transform.position, -transform.up);
 
-            if (Physics.Raycast(ray, out hitinfo, Mathf.Infinity, groundLayer))
+            if (Physics.Raycast(ray, out hitinfo, Mathf.Infinity, mli.groundLayer))
                 groundAngleTwo = Vector3.Angle(Vector3.up, hitinfo.normal);
 
-            if (GroundAngle() > slopeLimit + 1f && GroundAngle() <= 85 &&
-                groundAngleTwo > slopeLimit + 1f && groundAngleTwo <= 85 &&
-                groundDistance <= 0.05f && !onStep)
+            if (GroundAngle() > ci.slopeLimit + 1f && GroundAngle() <= 85 &&
+                groundAngleTwo > ci.slopeLimit + 1f && groundAngleTwo <= 85 &&
+                ci.groundDistance <= 0.05f && !onStep)
             {
                 sliding = true;
                 onGround = false;
-                var slideVelocity = (GroundAngle() - slopeLimit) * 5f;
+                var slideVelocity = (GroundAngle() - ci.slopeLimit) * 5f;
                 slideVelocity = Mathf.Clamp(slideVelocity, 0, 10);
                 _rigidbody.velocity = new Vector3(_rigidbody.velocity.x, -slideVelocity, _rigidbody.velocity.z);
             }
@@ -326,22 +265,22 @@ namespace GuiltyCharacter
                 Vector3 pos = transform.position + Vector3.up * (_capsuleCollider.radius);
                 
                 // raycast for check the ground distance
-                if (Physics.Raycast(transform.position + new Vector3(0, colliderHeight / 2, 0), Vector3.down, out groundHit, Mathf.Infinity, groundLayer))
+                if (Physics.Raycast(transform.position + new Vector3(0, colliderHeight / 2, 0), Vector3.down, out ci.groundHit, Mathf.Infinity, mli.groundLayer))
                 {
-                    dist = transform.position.y - groundHit.point.y;
+                    dist = transform.position.y - ci.groundHit.point.y;
                 }
 
                 // ray for SphereCast
                 Ray ray2 = new Ray(pos, -Vector3.up);
                 // sphere cast around the base of the capsule to check the ground distance
-                if (Physics.SphereCast(ray2, radius, out groundHit, Mathf.Infinity, groundLayer))
+                if (Physics.SphereCast(ray2, radius, out ci.groundHit, Mathf.Infinity, mli.groundLayer))
                 {
                     // check if sphereCast distance is small than the ray cast distance
-                    if (dist > (groundHit.distance - _capsuleCollider.radius * 0.1f))
-                        dist = (groundHit.distance - _capsuleCollider.radius * 0.1f);
+                    if (dist > (ci.groundHit.distance - _capsuleCollider.radius * 0.1f))
+                        dist = (ci.groundHit.distance - _capsuleCollider.radius * 0.1f);
                 }
 
-                groundDistance = dist;
+                ci.groundDistance = dist;
             }
         }
 
@@ -354,14 +293,14 @@ namespace GuiltyCharacter
             if (input.sqrMagnitude < 0.1 || !onGround) return false;
 
             var hit = new RaycastHit();
-            Ray rayStep = new Ray((transform.position + new Vector3(0, stepOffsetEnd, 0) + transform.forward * ((_capsuleCollider).radius + 0.05f)), Vector3.down);
+            Ray rayStep = new Ray((transform.position + new Vector3(0, ci.stepOffsetEnd, 0) + transform.forward * ((_capsuleCollider).radius + 0.05f)), Vector3.down);
 
-            if (Physics.Raycast(rayStep, out hit, stepOffsetEnd - stepOffsetStart, groundLayer))
+            if (Physics.Raycast(rayStep, out hit, ci.stepOffsetEnd - ci.stepOffsetStart, mli.groundLayer))
             {
-                if (!stopMove && hit.point.y >= (transform.position.y) && hit.point.y <= (transform.position.y + stepOffsetEnd))
+                if (!stopMove && hit.point.y >= (transform.position.y) && hit.point.y <= (transform.position.y + ci.stepOffsetEnd))
                 {
                     var heightPoint = new Vector3(transform.position.x, hit.point.y + 0.1f, transform.position.z);
-                    transform.position = Vector3.Lerp(transform.position, heightPoint, (speed * stepSmooth) * Time.fixedDeltaTime);
+                    transform.position = Vector3.Lerp(transform.position, heightPoint, (speed * ci.stepSmooth) * Time.fixedDeltaTime);
                     //var heightPoint = new Vector3(_rigidbody.velocity.x, hit.point.y + 0.1f, _rigidbody.velocity.z);
                     //_rigidbody.velocity = heightPoint * 10f * Time.fixedDeltaTime;
                     return true;
@@ -376,7 +315,7 @@ namespace GuiltyCharacter
         /// <returns></returns>
         float GroundAngle()
         {
-            var groundAngle = Vector3.Angle(groundHit.normal, Vector3.up);
+            var groundAngle = Vector3.Angle(ci.groundHit.normal, Vector3.up);
             return groundAngle;
         }
 
@@ -390,19 +329,19 @@ namespace GuiltyCharacter
             RaycastHit hitinfo;
             Ray ray = new Ray(transform.position + new Vector3(0, colliderHeight / 3, 0), transform.forward);
 
-            if (Physics.Raycast(ray, out hitinfo, _capsuleCollider.radius + stopMoveDistance, stopMoveLayer) && !usingLadder)
+            if (Physics.Raycast(ray, out hitinfo, _capsuleCollider.radius + mli.stopMoveDistance, mli.stopMoveLayer) && !usingLadder)
             {
                 var hitAngle = Vector3.Angle(Vector3.up, hitinfo.normal);
 
-                if (hitinfo.distance <= stopMoveDistance && hitAngle > 85)
+                if (hitinfo.distance <= mli.stopMoveDistance && hitAngle > 85)
                     stopMove = true;
-                else if (hitAngle >= slopeLimit + 1f && hitAngle <= 85)
+                else if (hitAngle >= ci.slopeLimit + 1f && hitAngle <= 85)
                     stopMove = true;
             }
-            else if (Physics.Raycast(ray, out hitinfo, 1f, groundLayer) && !usingLadder)
+            else if (Physics.Raycast(ray, out hitinfo, 1f, mli.groundLayer) && !usingLadder)
             {
                 var hitAngle = Vector3.Angle(Vector3.up, hitinfo.normal);
-                if (hitAngle >= slopeLimit + 1f && hitAngle <= 85)
+                if (hitAngle >= ci.slopeLimit + 1f && hitAngle <= 85)
                     stopMove = true;
             }
             else
@@ -449,7 +388,7 @@ namespace GuiltyCharacter
         {
             if (input != Vector2.zero && !quickTurn180 && !lockPlayer && targetDirection.magnitude > 0.1f)
             {
-                freeRotation = Quaternion.LookRotation(targetDirection, Vector3.up);
+                cameraState.freeRotation = Quaternion.LookRotation(targetDirection, Vector3.up);
                 Vector3 velocity = Quaternion.Inverse(transform.rotation) * targetDirection.normalized;
                 direction = Mathf.Atan2(velocity.x, velocity.z) * 180.0f / 3.14159f;
 
@@ -463,14 +402,14 @@ namespace GuiltyCharacter
                 if ((!quickTurn180 && !isJumping) || (isJumping && actionsController.Jump.jumpAirControl))
                 {
                     Vector3 lookDirection = targetDirection.normalized;
-                    freeRotation = Quaternion.LookRotation(lookDirection, transform.up);
-                    var euler = new Vector3(0, freeRotation.eulerAngles.y, 0);
-                    transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.Euler(euler), rotationSpeed * Time.fixedDeltaTime);
+                    cameraState.freeRotation = Quaternion.LookRotation(lookDirection, transform.up);
+                    var euler = new Vector3(0, cameraState.freeRotation.eulerAngles.y, 0);
+                    transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.Euler(euler), ci.rotationSpeed * Time.fixedDeltaTime);
                 }
-                if (!keepDirection)
-                    oldInput = input;
-                if (Vector2.Distance(oldInput, input) > 0.9f && keepDirection)
-                    keepDirection = false;
+                if (!cameraState.keepDirection)
+                    cameraState.oldInput = input;
+                if (Vector2.Distance(cameraState.oldInput, input) > 0.9f && cameraState.keepDirection)
+                    cameraState.keepDirection = false;
             }
         }
 
@@ -482,21 +421,22 @@ namespace GuiltyCharacter
             get
             {
                 Vector3 refDir = Vector3.zero;
-                cameraForward = keepDirection ? cameraForward : cameraTransform.TransformDirection(Vector3.forward);
-                cameraForward.y = 0;
+
+                cameraState.cameraForward = cameraState.keepDirection ? cameraState.cameraForward : cameraTransform.TransformDirection(Vector3.forward);
+                cameraState.cameraForward.y = 0;
 
                 //if (tpCamera == null || !tpCamera.currentState.cameraMode.Equals(TPCameraMode.FixedAngle) || !rotateByWorld)
-                if(!rotateByWorld)
+                if(!ci.rotateByWorld)
                 {
                     //cameraForward = tpCamera.transform.TransformDirection(Vector3.forward);
-                    cameraForward = keepDirection ? cameraForward : cameraTransform.TransformDirection(Vector3.forward);
-                    cameraForward.y = 0; //set to 0 because of camera rotation on the X axis
+                    cameraState.cameraForward = cameraState.keepDirection ? cameraState.cameraForward : cameraTransform.TransformDirection(Vector3.forward);
+                    cameraState.cameraForward.y = 0; //set to 0 because of camera rotation on the X axis
 
                     //get the right-facing direction of the camera
-                    cameraRight = keepDirection ? cameraRight : cameraTransform.TransformDirection(Vector3.right);
+                    cameraState.cameraRight = cameraState.keepDirection ? cameraState.cameraRight : cameraTransform.TransformDirection(Vector3.right);
 
                     // determine the direction the player will face based on input and the camera's right and forward directions
-                    refDir = input.x * cameraRight + input.y * cameraForward;
+                    refDir = input.x * cameraState.cameraRight + input.y * cameraState.cameraForward;
                 }
                 else
                 {
@@ -508,4 +448,22 @@ namespace GuiltyCharacter
     }
 }
 
+[System.Serializable]
+public struct CameraState
+{
+    // generic string to change the CameraState
+    public string customCameraState;
+    // generic string to change the CameraPoint of the Fixed Point Mode
+    public string customlookAtPoint;
+    // generic bool to change the CameraState
+    public bool changeCameraState;
+    // generic bool to know if the state will change with or without lerp
+    public bool smoothCameraState;
+    // generic variables to find the correct direction 
+    public Quaternion freeRotation;
+    public bool keepDirection;
+    [HideInInspector] public Vector2 oldInput;
+    [HideInInspector] public Vector3 cameraForward;
+    [HideInInspector] public Vector3 cameraRight;
+}
 

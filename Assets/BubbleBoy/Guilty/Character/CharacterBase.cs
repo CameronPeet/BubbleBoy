@@ -7,7 +7,7 @@ using GuiltyCharacter;
 //Contain the base variables for character component setup and initialise them
 namespace GuiltyCharacter
 {
-    public class CharacterBase : MonoBehaviour, IRagdollBase
+    public class CharacterBase : MonoBehaviour
     {
 
         #region BaseVariables
@@ -47,21 +47,9 @@ namespace GuiltyCharacter
                 {
                     camera = Camera.main.transform;
                 }
-                if(camera == transform)
-                {
-                    Debug.LogWarning("Guilty: Missing TPCamera or MainCamera");
-                    this.enabled = false;
-                }
-
                 return camera;
             }
         }
-
-        [Header("---! Layers !---")]
-        public LayerMask groundLayer = 1 << 0;
-        [SerializeField]
-        protected LayerMask stopMoveLayer;
-        public float stopMoveDistance = 0.5f;
 
         public void Initialise()
         {
@@ -92,35 +80,6 @@ namespace GuiltyCharacter
             colliderCenter = GetComponent<CapsuleCollider>().center;
             colliderRadius = GetComponent<CapsuleCollider>().radius;
             colliderHeight = GetComponent<CapsuleCollider>().height;
-
-
-        }
-
-        public void ResetRagdoll()
-        {
-            //tpCamera.offSetPlayerPivot = offSetPivot;
-            //tpCamera.SetTarget(this.transform);
-            lockPlayer = false;
-            verticalVelocity = 0f;
-            ragdolled = false;
-        }
-
-        public void RagdollGetUp()
-        {
-            _rigidbody.useGravity = true;
-            _rigidbody.isKinematic = false;
-            _capsuleCollider.enabled = true;
-        }
-
-        public void EnableRagdoll()
-        {
-            //tpCamera.offSetPlayerPivot = 0f;
-            //tpCamera.SetTarget(animator.GetBoneTransform(HumanBodyBones.Hips));
-            ragdolled = true;
-            _capsuleCollider.enabled = false;
-            _rigidbody.useGravity = false;
-            _rigidbody.isKinematic = true;
-            lockPlayer = true;
         }
     }
 }

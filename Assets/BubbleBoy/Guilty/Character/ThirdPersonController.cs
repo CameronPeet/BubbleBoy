@@ -115,7 +115,6 @@ namespace GuiltyCharacter
                         DoAction(hitObject, ref climbUp, _input);
                     else if (hitObject.CompareTag("PushButton"))
                     {
-                        print("hello");
                         DoAction(hitObject, ref pushButton, _input);
                     }
                 }

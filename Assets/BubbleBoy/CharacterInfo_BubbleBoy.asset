@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3bf77910ba2559f47b1ae3f2da442540, type: 3}
+  m_Name: CharacterInfo_BubbleBoy
+  m_EditorClassIdentifier: 
+  locomotionType: 0
+  rotateByWorld: 0
+  rotationSpeed: 8
+  extraMoveSpeed: 1
+  extraStrafeSpeed: 1
+  groundCheckDistance: 0.5
+  groundDistance: -0.00000011920929
+  stepOffsetEnd: 0.45
+  stepOffsetStart: 0.05
+  stepSmooth: 2
+  slopeLimit: 45
+  extraGravity: 4
+  landHighVel: -5
+  ragdollVel: -8
+  moveSet_ID: 0

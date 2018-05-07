@@ -6,14 +6,8 @@ namespace GuiltyCharacter
     public abstract class ThirdPersonAnimator : Character
     {
         #region Variables
-        // generate a random idle animation
-        private float randomIdleCount, randomIdle;
-        // used to lerp the head track
-        private Vector3 lookPosition;
         // match cursorObject to help animation to reach their cursorObject
         [HideInInspector] public Transform matchTarget;
-        // head track control, if you want to turn off at some point, make it 0
-        [HideInInspector] public float lookAtWeight;
         // access the animator states (layers)
         [HideInInspector] public AnimatorStateInfo stateInfo, upperBodyInfo;
         [HideInInspector] public float oldSpeed;
@@ -59,9 +53,9 @@ namespace GuiltyCharacter
             animator.SetBool("Strafing", strafing);
             animator.SetBool("Crouch", crouch);
             animator.SetBool("OnGround", onGround);
-            animator.SetFloat("GroundDistance", groundDistance);
+            animator.SetFloat("GroundDistance", ci.groundDistance);
             animator.SetFloat("VerticalVelocity", verticalVelocity);
-            animator.SetFloat("MoveSet_ID", moveSet_ID, 0.1f, Time.fixedDeltaTime);
+            animator.SetFloat("MoveSet_ID", ci.moveSet_ID, 0.1f, Time.fixedDeltaTime);
 
             if (freeLocomotionConditions)
                 // free directional movement get the directional angle
@@ -82,16 +76,16 @@ namespace GuiltyCharacter
             {
                 if (stateInfo.IsName("Grounded.Strafing Movement") || stateInfo.IsName("Grounded.Strafing Crouch"))
                 {
-                    var newSpeed_Y = (extraStrafeSpeed * speed);
-                    var newSpeed_X = (extraStrafeSpeed * direction);
-                    newSpeed_Y = Mathf.Clamp(newSpeed_Y, -extraStrafeSpeed, extraStrafeSpeed);
-                    newSpeed_X = Mathf.Clamp(newSpeed_X, -extraStrafeSpeed, extraStrafeSpeed);
+                    var newSpeed_Y = (ci.extraStrafeSpeed * speed);
+                    var newSpeed_X = (ci.extraStrafeSpeed * direction);
+                    newSpeed_Y = Mathf.Clamp(newSpeed_Y, -ci.extraStrafeSpeed, ci.extraStrafeSpeed);
+                    newSpeed_X = Mathf.Clamp(newSpeed_X, -ci.extraStrafeSpeed, ci.extraStrafeSpeed);
                     transform.position += transform.forward * (newSpeed_Y * Time.fixedDeltaTime);
                     transform.position += transform.right * (newSpeed_X * Time.fixedDeltaTime);
                 }
                 else if (stateInfo.IsName("Grounded.Free Movement") || stateInfo.IsName("Grounded.Free Crouch"))
                 {
-                    var newSpeed = (extraMoveSpeed * speed);
+                    var newSpeed = (ci.extraMoveSpeed * speed);
                     transform.position += transform.forward * (newSpeed * Time.fixedDeltaTime);
                 }
             }
@@ -112,7 +106,7 @@ namespace GuiltyCharacter
             if (stateInfo.IsName("Action.QuickTurn180"))
             {
                 if (!animator.IsInTransition(0) && !ragdolled)
-                    animator.MatchTarget(Vector3.one, freeRotation, AvatarTarget.Root,
+                    animator.MatchTarget(Vector3.one, cameraState.freeRotation, AvatarTarget.Root,
                                  new MatchTargetWeightMask(Vector3.zero, 1f),
                                  animator.GetCurrentAnimatorStateInfo(0).normalizedTime, 0.9f);
 
@@ -134,13 +128,6 @@ namespace GuiltyCharacter
             if (speedTime <= -3f && quickStopConditions)
                 quickStop = true;
 
-            //else if (inputType == InputType.Controler)
-            //{
-            //    // make a quickStop when release the analogue while running
-            //    if (speedTime <= -6f && quickStopConditions)
-            //        quickStop = true;
-            //}
-
             // disable quickStop
             if (quickStop && input.sqrMagnitude >= 0.1f || quickTurn180 || inAttack)
                 quickStop = false;
@@ -151,11 +138,6 @@ namespace GuiltyCharacter
             }
         }
 
-
-
-
-
-      
 
         /// <summary>
         /// JUMP ANIMATION AND BEHAVIOUR
@@ -225,7 +207,7 @@ namespace GuiltyCharacter
             animator.SetBool("LandHigh", landHigh);
 
             // if the character fall from a great height, landhigh animation
-            if (!onGround && verticalVelocity <= landHighVel && groundDistance <= 0.5f)
+            if (!onGround && verticalVelocity <= ci.landHighVel && ci.groundDistance <= 0.5f)
                 landHigh = true;
 
             if (landHigh && stateInfo.IsName("Airborne.LandHigh"))
