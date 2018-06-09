@@ -24,6 +24,7 @@ namespace GuiltyCharacter
 
         #endregion
 
+        float attackCount = 0;
         /// <summary>
         /// ANIMATOR - update animations at the animator controller (Mecanim)
         /// </summary>
@@ -43,8 +44,26 @@ namespace GuiltyCharacter
             QuickStopAnimation();
             ExtraMoveSpeed();
             LocomotionAnimation();
+            MeleeATKAnimation();
+
         }
 
+        /// <summary>
+        /// Control Attack Behaviour
+        /// </summary>
+        void MeleeATKAnimation()
+        {
+            if (meleeManager == null) return;
+            // always reset the attack trigger on the last attack,
+            // to make sure the character does not attack again when finish the last attack
+            // if you created more attack states for different weapons like two handed, add the last clip here
+            if (stateInfo.IsName("OneHandedSword.Attack C"))
+                animator.ResetTrigger("MeleeAttack");
+
+            if (actions) attackCount = 0;
+            animator.SetBool("InAttack", meleeManager.inAttack);
+            animator.SetInteger("ATK_ID", meleeManager.currentMeleeWeapon != null ? meleeManager.currentMeleeWeapon.ATK_ID : 0);
+        }
         /// <summary>
         /// CONTROL LOCOMOTION
         /// </summary>
@@ -126,7 +145,9 @@ namespace GuiltyCharacter
 
             // make a quickStop when release the key while running
             if (speedTime <= -3f && quickStopConditions)
+            {
                 quickStop = true;
+            }
 
             // disable quickStop
             if (quickStop && input.sqrMagnitude >= 0.1f || quickTurn180 || inAttack)

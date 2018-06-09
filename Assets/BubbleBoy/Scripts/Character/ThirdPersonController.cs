@@ -28,7 +28,8 @@ namespace GuiltyCharacter
         void Start()
         {
             // setup the basic information, created on Character.cs	
-            Initialise();					
+            Initialise();
+            meleeManager = GetComponent<MeleeEquipmentManager>();
             Cursor.visible = false;
         }
 
@@ -56,6 +57,7 @@ namespace GuiltyCharacter
                 // you can change the keyboard inputs by chaging the Alternative Button on the InputManager.                
                 InteractInput();
                 JumpInput();
+                AttackInput();
             }
             else
                 LockPlayer();
@@ -100,8 +102,16 @@ namespace GuiltyCharacter
             //    tpCamera.RotateCamera(CrossPlatformInputManager.GetAxis("Mouse X"), CrossPlatformInputManager.GetAxis("Mouse Y"));
             //else if (inputType == InputType.MouseKeyboard)
             //{
-                tpCamera.RotateCamera(Input.GetAxis("Mouse X"), Input.GetAxis("Mouse Y"));
-                tpCamera.Zoom(Input.GetAxis("Mouse ScrollWheel"));
+            float x = Input.GetAxis("Mouse X");
+            float y = Input.GetAxis("Mouse Y");
+
+            if(x == 0.0f && y == 0.0f)
+            {
+                x = Input.GetAxis("RightAnalogHorizontal");
+                y = -Input.GetAxis("RightAnalogVertical");
+            }
+            tpCamera.RotateCamera(x, y);
+            tpCamera.Zoom(Input.GetAxis("Mouse ScrollWheel"));
             //}
             //else if (inputType == InputType.Controler)
             //    tpCamera.RotateCamera(Input.GetAxis("RightAnalogHorizontal"), Input.GetAxis("RightAnalogVertical"));
@@ -205,6 +215,8 @@ namespace GuiltyCharacter
             var hitObject = CheckActionObject();
             if (hitObject != null)
             {
+                print("asd");
+
                 try
                 {
                     if (hitObject.CompareTag("ClimbUp"))
@@ -212,6 +224,10 @@ namespace GuiltyCharacter
                     else if (hitObject.CompareTag("PushButton"))
                     {
                         DoAction(hitObject, ref pushButton, _input);
+                    }
+                    else if (hitObject.CompareTag("Weapon"))
+                    {
+                        PickUpEquipmentInput(hitObject, _input);
                     }
                 }
                 catch (UnityException e)
@@ -249,5 +265,66 @@ namespace GuiltyCharacter
                 }
             }
         }
+
+        /// <summary>
+        /// The method CheckActionObject() will return a gameobject type of CollectableItem if you stay inside the Trigger area
+        /// </summary>
+        /// <param name="collectableItem"></param>
+        void PickUpEquipmentInput(GameObject collectableItem, string _input)
+        {
+            //if (inputType == InputType.Mobile)
+            //{
+            //    if (CrossPlatformInputManager.GetButtonDown(_input) && !actions)
+            //        PickUpEquip(collectableItem);
+            //}
+            //else
+
+            if (Input.GetKeyDown(KeyCode.E) && !actions)
+            {
+                PickUpEquip(collectableItem);
+            }
+        }
+
+        void PickUpEquip(GameObject collectableItem)
+        {
+            var collectable = collectableItem.GetComponent<CollectableMelee>();
+
+            if (collectable.GetType().Equals(typeof(MeleeWeapon)))
+                SendMessage("SetWeaponHandler", collectable, SendMessageOptions.RequireReceiver);
+            GetComponent<MeleeEquipmentManager>().SetWeaponHandler(collectable);
+            //else if (collectable._meleeItem.GetType().Equals(typeof(MeleeShield)))
+            //    SendMessage("SetShieldHandler", collectable, SendMessageOptions.DontRequireReceiver);
+            print("MessageSent");
+            //if (hud != null) hud.DisableSprite();
+            currentCollectable = null;
+
+        }
+
+        /// <summary>
+        /// ATTACK INPUT - trigger a attack animation if the character are equipped with a attack weapon 
+        /// </summary>        
+        void AttackInput()
+        {
+            if (!actionsController.Attack.use) return;
+            if (meleeManager == null) return;
+
+            var _input = actionsController.Attack.input.ToString();
+
+            // attack conditions
+            bool weaponStaminaConditions = meleeManager.currentMeleeWeapon != null;
+            bool attackConditions = (!actions || roll) && onGround && weaponStaminaConditions && meleeManager.currentMeleeWeapon != null;
+
+            // attack input
+            {
+
+                if (Input.GetButtonDown("Fire1") && attackConditions)
+                {
+                    print("Attack!");
+                    animator.SetTrigger("MeleeAttack");
+
+                }
+            }
+        }
+
     }
 }

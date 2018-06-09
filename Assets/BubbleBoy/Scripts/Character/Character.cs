@@ -77,6 +77,8 @@ namespace GuiltyCharacter
         [Tooltip("Create character info: right click folder Create->Character->CharacterInfo")]
         protected CharacterInfo ci;
 
+        [HideInInspector] public MeleeEquipmentManager meleeManager;
+
         [SerializeField]
         protected CameraVars cameraState;
 
@@ -123,6 +125,10 @@ namespace GuiltyCharacter
 
                 //If no current action even taking place, allow free rotational movement
                 if ((!actions || quickTurn180 || quickStop) && !inAttack)
+                {
+                    FreeRotationMovement();
+                }
+                else if(actions && quickStop)
                 {
                     FreeRotationMovement();
                 }

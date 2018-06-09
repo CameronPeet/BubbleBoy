@@ -17,6 +17,7 @@ public class ThirdPersonCamera : MonoBehaviour
     [HideInInspector] public float offSetPlayerPivot;
 
     #region Inspector
+
     public Transform playerTarget;
     public float xMouseSensitivity = 3f;
     public float yMouseSensitivity = 3f;
@@ -25,6 +26,12 @@ public class ThirdPersonCamera : MonoBehaviour
     public float smoothBetweenState = 0.05f;
     public float smoothCameraRotation = 12f;
     public float scrollSpeed = 10f;
+
+    [Tooltip("What layer will be culled")]
+    public LayerMask cullingLayer;
+    [Tooltip("Change this value If the camera pass through the wall")]
+    public float clipPlaneMargin;
+
     #endregion
 
     #region Variables
@@ -256,8 +263,26 @@ public class ThirdPersonCamera : MonoBehaviour
         cPos = currentTargetPos + new Vector3(0, targetHeight, 0);
         oldTargetPos = targetPos + new Vector3(0, currentState.height, 0);
 
-        oldDistance = useSmooth ? Mathf.Lerp(oldDistance, distance, 2f * Time.fixedDeltaTime) : distance;
-        targetHeight = useSmooth ? Mathf.Lerp(targetHeight, currentState.height, 2f * Time.fixedDeltaTime) : currentState.height;
+        #region ClippingHit
+        RaycastHit hitInfo;
+        ClipPlanePoints planePoints = NearClipPlanePoints(_camera, cPos + (camDir * (distance)), clipPlaneMargin);
+        ClipPlanePoints oldPoints = NearClipPlanePoints(_camera, oldTargetPos + (camDir * oldDistance), clipPlaneMargin);
+        if (CullingRayCast(cPos, planePoints, out hitInfo, distance + 0.2f, cullingLayer)) distance = desiredDistance;
+
+        if (CullingRayCast(oldTargetPos, oldPoints, out hitInfo, oldDistance + 0.2f, cullingLayer))
+        {
+            var t = distance - 0.2f;
+            t -= currentState.cullingMinDist;
+            t /= (distance - currentState.cullingMinDist);
+            targetHeight = Mathf.Lerp(currentState.cullingHeight, currentState.height, Mathf.Clamp(t, 0.0f, 1.0f));
+            cPos = currentTargetPos + new Vector3(0, targetHeight, 0);
+        }
+        else
+        {
+            oldDistance = useSmooth ? Mathf.Lerp(oldDistance, distance, 2f * Time.fixedDeltaTime) : distance;
+            targetHeight = useSmooth ? Mathf.Lerp(targetHeight, currentState.height, 2f * Time.fixedDeltaTime) : currentState.height;
+        }
+        #endregion
 
         var lookPoint = cPos;
         lookPoint += (targetLookAt.right * Vector3.Dot(camDir * (distance), targetLookAt.right));
@@ -415,6 +440,78 @@ public class ThirdPersonCamera : MonoBehaviour
             mouseY = rotation.eulerAngles.x;
         mouseX = rotation.eulerAngles.y;
     }
+
+    bool CullingRayCast(Vector3 from, ClipPlanePoints _to, out RaycastHit hitInfo, float distance, LayerMask cullingLayer)
+    {
+        bool value = false;
+        //if (showGizmos)
+        //{
+        //    Debug.DrawRay(from, _to.LowerLeft - from);
+        //    Debug.DrawLine(_to.LowerLeft, _to.LowerRight);
+        //    Debug.DrawLine(_to.UpperLeft, _to.UpperRight);
+        //    Debug.DrawLine(_to.UpperLeft, _to.LowerLeft);
+        //    Debug.DrawLine(_to.UpperRight, _to.LowerRight);
+        //    Debug.DrawRay(from, _to.LowerRight - from);
+        //    Debug.DrawRay(from, _to.UpperLeft - from);
+        //    Debug.DrawRay(from, _to.UpperRight - from);
+        //}
+        if (Physics.Raycast(from, _to.LowerLeft - from, out hitInfo, distance, cullingLayer))
+        {
+            value = true;
+            desiredDistance = hitInfo.distance;
+        }
+
+        if (Physics.Raycast(from, _to.LowerRight - from, out hitInfo, distance, cullingLayer))
+        {
+            value = true;
+            if (desiredDistance > hitInfo.distance) desiredDistance = hitInfo.distance;
+        }
+
+        if (Physics.Raycast(from, _to.UpperLeft - from, out hitInfo, distance, cullingLayer))
+        {
+            value = true;
+            if (desiredDistance > hitInfo.distance) desiredDistance = hitInfo.distance;
+        }
+
+        if (Physics.Raycast(from, _to.UpperRight - from, out hitInfo, distance, cullingLayer))
+        {
+            value = true;
+            if (desiredDistance > hitInfo.distance) desiredDistance = hitInfo.distance;
+        }
+
+        return value;
+    }
+
+    ClipPlanePoints NearClipPlanePoints(Camera camera, Vector3 pos, float clipPlaneMargin)
+    {
+        var clipPlanePoints = new ClipPlanePoints();
+
+        var transform = camera.transform;
+        var halfFOV = (camera.fieldOfView / 2) * Mathf.Deg2Rad;
+        var aspect = camera.aspect;
+        var distance = camera.nearClipPlane;
+        var height = distance * Mathf.Tan(halfFOV);
+        var width = height * aspect;
+        height *= 1 + clipPlaneMargin;
+        width *= 1 + clipPlaneMargin;
+        clipPlanePoints.LowerRight = pos + transform.right * width;
+        clipPlanePoints.LowerRight -= transform.up * height;
+        clipPlanePoints.LowerRight += transform.forward * distance;
+
+        clipPlanePoints.LowerLeft = pos - transform.right * width;
+        clipPlanePoints.LowerLeft -= transform.up * height;
+        clipPlanePoints.LowerLeft += transform.forward * distance;
+
+        clipPlanePoints.UpperRight = pos + transform.right * width;
+        clipPlanePoints.UpperRight += transform.up * height;
+        clipPlanePoints.UpperRight += transform.forward * distance;
+
+        clipPlanePoints.UpperLeft = pos - transform.right * width;
+        clipPlanePoints.UpperLeft += transform.up * height;
+        clipPlanePoints.UpperLeft += transform.forward * distance;
+
+        return clipPlanePoints;
+    }
 }
 
 public enum CameraMode
@@ -423,3 +520,13 @@ public enum CameraMode
     FixedAngle,
     FixedPoint
 }
+
+
+public struct ClipPlanePoints
+{
+    public Vector3 UpperLeft;
+    public Vector3 UpperRight;
+    public Vector3 LowerLeft;
+    public Vector3 LowerRight;
+}
+
