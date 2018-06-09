@@ -36,6 +36,7 @@ namespace GuiltyCharacter
         {
             UpdateMotor();
             UpdateAnimator();
+            ControlCameraState();
         }
 
         void LateUpdate()
@@ -46,6 +47,7 @@ namespace GuiltyCharacter
 
         void InputHandle()
         {
+            CameraInput();
             if (!lockPlayer && !ragdolled)
             {
                 ControllerInput();
@@ -64,6 +66,100 @@ namespace GuiltyCharacter
             input = Vector2.zero;
             speed = 0f;
             canSprint = false;
+        }
+
+
+        /// <summary>
+        /// CAMERA STATE - you can change the CameraState here, the bool means if you want lerp of not, make sure to use the same CameraState String that you named on ListData
+        /// </summary>
+        void ControlCameraState()
+        {
+            if (tpCamera == null)
+                return;
+
+            
+            if (cameraState.changeCameraState && !strafing)
+                tpCamera.ChangeState(cameraState.customCameraState, cameraState.customlookAtPoint, cameraState.smoothCameraState);
+            else if (crouch)
+                tpCamera.ChangeState("Crouch", true);
+            else if (strafing)
+                tpCamera.ChangeState("Strafing", true);
+            else
+                tpCamera.ChangeState("Default", true);
+        }
+
+        /// <summary>
+        /// Camera Input
+        /// </summary>
+        void CameraInput()
+        {
+            if(tpCamera == null)
+            { print("Hello"); return;  }
+
+            //if (inputType == InputType.Mobile)
+            //    tpCamera.RotateCamera(CrossPlatformInputManager.GetAxis("Mouse X"), CrossPlatformInputManager.GetAxis("Mouse Y"));
+            //else if (inputType == InputType.MouseKeyboard)
+            //{
+                tpCamera.RotateCamera(Input.GetAxis("Mouse X"), Input.GetAxis("Mouse Y"));
+                tpCamera.Zoom(Input.GetAxis("Mouse ScrollWheel"));
+            //}
+            //else if (inputType == InputType.Controler)
+            //    tpCamera.RotateCamera(Input.GetAxis("RightAnalogHorizontal"), Input.GetAxis("RightAnalogVertical"));
+
+            RotateWithCamera();
+        }
+
+
+        /// <summary>
+        /// AIMING INPUT
+        /// </summary>
+        void LockOnInput()
+        {
+            if (!actionsController.LockOn.use) return;
+            var _input = actionsController.LockOn.input.ToString();
+
+            if (!ci.locomotionType.Equals(LocomotionType.OnlyFree))
+            {
+                //if (inputType == InputType.Mobile)
+                //{
+                //    if (CrossPlatformInputManager.GetButtonDown(_input) && !actions)
+                //    {
+                //        animator.SetFloat("Direction", 0f);
+                //        strafing = !strafing;
+                //        tpCamera.gameObject.SendMessage("UpdateLockOn", strafing, SendMessageOptions.DontRequireReceiver);
+                //    }
+                //}
+                //else
+                {
+                    if (Input.GetButtonDown(_input) && !actions)
+                    {
+                        animator.SetFloat("Direction", 0f);
+                        strafing = !strafing;
+                        tpCamera.gameObject.SendMessage("UpdateLockOn", strafing, SendMessageOptions.DontRequireReceiver);
+                    }
+                }
+            }
+
+            if (tpCamera.lockTarget)
+            {
+                // Switch between targets using Keyboard
+                //if (inputType == InputType.MouseKeyboard)
+                {
+                    if (Input.GetKey(KeyCode.X))
+                        tpCamera.gameObject.SendMessage("ChangeTarget", 1, SendMessageOptions.DontRequireReceiver);
+                    else if (Input.GetKey(KeyCode.Z))
+                        tpCamera.gameObject.SendMessage("ChangeTarget", -1, SendMessageOptions.DontRequireReceiver);
+                }
+                //// Switch between targets using GamePad
+                //else if (inputType == InputType.Controler)
+                //{
+                //    var value = Input.GetAxisRaw("RightAnalogHorizontal");
+                //    if (value == 1)
+                //        tpCamera.gameObject.SendMessage("ChangeTarget", 1, SendMessageOptions.DontRequireReceiver);
+                //    else if (value == -1f)
+                //        tpCamera.gameObject.SendMessage("ChangeTarget", -1, SendMessageOptions.DontRequireReceiver);
+                //}
+            }
         }
 
         /// <summary>

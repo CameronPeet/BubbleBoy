@@ -106,9 +106,9 @@ namespace GuiltyCharacter
             if (stateInfo.IsName("Action.QuickTurn180"))
             {
                 if (!animator.IsInTransition(0) && !ragdolled)
-                    animator.MatchTarget(Vector3.one, cameraState.freeRotation, AvatarTarget.Root,
-                                 new MatchTargetWeightMask(Vector3.zero, 1f),
-                                 animator.GetCurrentAnimatorStateInfo(0).normalizedTime, 0.9f);
+                    //animator.MatchTarget(Vector3.one, cameraState.freeRotation, AvatarTarget.Root,
+                    //             new MatchTargetWeightMask(Vector3.zero, 1f),
+                    //             animator.GetCurrentAnimatorStateInfo(0).normalizedTime, 0.9f);
 
                 if (stateInfo.normalizedTime >= 0.9f)
                     quickTurn180 = false;
@@ -316,18 +316,6 @@ namespace GuiltyCharacter
             }
         }
 
-        Vector3 lookPoint(float distance)
-        {
-            Ray ray = new Ray(cameraTransform.position, cameraTransform.forward);
-            var point = ray.GetPoint(distance);
-            //if (tpCamera != null && tpCamera.lockTarget != null)
-            //    point = tpCamera.lockTarget.GetPointOffBoundsCenter(0.2f);
-
-            return point;
-        }
-
-
-
         public static Vector3 NormalizeAngle(Vector3 eulerAngle)
         {
             var delta = eulerAngle;
@@ -342,6 +330,29 @@ namespace GuiltyCharacter
             else if (delta.z < -180) delta.z += 360;
 
             return new Vector3(delta.x, delta.y, delta.z);//round values to angle;
+        }
+
+        /// <summary>
+        /// Get look at point based on bounds center of lockTarget
+        /// </summary>
+        /// <param name="distance"></param>
+        /// <returns></returns>
+        Vector3 lookPoint(float distance)
+        {
+            Ray ray = new Ray(cameraTransform.position, cameraTransform.forward);
+            Vector3 point = ray.GetPoint(distance);
+            if(tpCamera != null && tpCamera.lockTarget != null)
+            {
+                Transform target = tpCamera.lockTarget;
+                float _heightOffset = 0.2f;
+
+                var bounds = target.GetComponent<Collider>().bounds;
+                var middle = bounds.center;
+                var height = Vector3.Distance(bounds.min, bounds.max);
+
+                point = middle + new Vector3(0, height * _heightOffset, 0);
+            }
+            return point;
         }
 
 

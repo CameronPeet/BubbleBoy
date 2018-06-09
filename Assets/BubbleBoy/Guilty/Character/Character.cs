@@ -78,7 +78,7 @@ namespace GuiltyCharacter
         protected CharacterInfo ci;
 
         [SerializeField]
-        protected CameraState cameraState;
+        protected CameraVars cameraState;
 
         protected GameObject currentCollectable;
 
@@ -386,17 +386,23 @@ namespace GuiltyCharacter
         /// </summary>
         void FreeRotationMovement()
         {
+            //If we have input + not in middle of quickTurn + player is not locked + stick magnitude is not minimal
             if (input != Vector2.zero && !quickTurn180 && !lockPlayer && targetDirection.magnitude > 0.1f)
             {
+
+                //Set rotation to target direction rotated around world up vector
                 cameraState.freeRotation = Quaternion.LookRotation(targetDirection, Vector3.up);
+                //Calculate a velocity based on inverse of current rotation * target direction
                 Vector3 velocity = Quaternion.Inverse(transform.rotation) * targetDirection.normalized;
+
+                //final direction equals Inverse x z (tan) in radians
                 direction = Mathf.Atan2(velocity.x, velocity.z) * 180.0f / 3.14159f;
 
-                // activate quickTurn180 based on the directional angle
                 var quickTurn180Conditions = !crouch && direction >= 165 && !jump && onGround
-                                           || !crouch && direction <= -165 && !jump && onGround;
+                                                     || !crouch && direction <= -165 && !jump && onGround;
                 if (quickTurn180Conditions)
                     quickTurn180 = true;
+
 
                 // apply free directional rotation while not turning180 animations
                 if ((!quickTurn180 && !isJumping) || (isJumping && actionsController.Jump.jumpAirControl))
@@ -413,6 +419,25 @@ namespace GuiltyCharacter
             }
         }
 
+        public virtual void RotateWithCamera()
+        {
+            if(strafing && !actions && !lockPlayer && input != Vector2.zero)
+            {
+                //smooth align character with aiming position
+                if (tpCamera != null && tpCamera.lockTarget)
+                {
+                    Quaternion rot = Quaternion.LookRotation(tpCamera.lockTarget.position - transform.position);
+                    Quaternion newPos = Quaternion.Euler(transform.eulerAngles);
+                    transform.rotation = Quaternion.Slerp(transform.rotation, newPos, 20f * Time.fixedDeltaTime);
+                }
+                else
+                {
+                    Quaternion newPos = Quaternion.Euler(transform.eulerAngles);
+                    transform.rotation = Quaternion.Slerp(transform.rotation, newPos, 20f * Time.fixedDeltaTime);
+                }
+            }
+        }
+
         /// <summary>
         /// Find the correct direction based on the camera direction
         /// </summary>
@@ -425,8 +450,8 @@ namespace GuiltyCharacter
                 cameraState.cameraForward = cameraState.keepDirection ? cameraState.cameraForward : cameraTransform.TransformDirection(Vector3.forward);
                 cameraState.cameraForward.y = 0;
 
-                //if (tpCamera == null || !tpCamera.currentState.cameraMode.Equals(TPCameraMode.FixedAngle) || !rotateByWorld)
-                if(!ci.rotateByWorld)
+                if (tpCamera == null || !tpCamera.currentState.cameraMode.Equals(CameraMode.FixedAngle) || !ci.rotateByWorld)
+                if (!ci.rotateByWorld)
                 {
                     //cameraForward = tpCamera.transform.TransformDirection(Vector3.forward);
                     cameraState.cameraForward = cameraState.keepDirection ? cameraState.cameraForward : cameraTransform.TransformDirection(Vector3.forward);
@@ -449,7 +474,7 @@ namespace GuiltyCharacter
 }
 
 [System.Serializable]
-public struct CameraState
+public struct CameraVars
 {
     // generic string to change the CameraState
     public string customCameraState;

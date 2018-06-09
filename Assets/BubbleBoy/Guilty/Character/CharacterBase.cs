@@ -11,6 +11,7 @@ namespace GuiltyCharacter
     {
 
         #region BaseVariables
+        [HideInInspector] public ThirdPersonCamera tpCamera;
         // get the animator component of character
         [HideInInspector] public Animator animator;
         // physics material
@@ -55,6 +56,8 @@ namespace GuiltyCharacter
         {
             animator = GetComponent<Animator>();
 
+            tpCamera = ThirdPersonCamera.instance;
+
             Transform hips = animator.GetBoneTransform(HumanBodyBones.Hips);
             offSetPivot = Vector3.Distance(transform.position, hips.position);
 
@@ -80,6 +83,43 @@ namespace GuiltyCharacter
             colliderCenter = GetComponent<CapsuleCollider>().center;
             colliderRadius = GetComponent<CapsuleCollider>().radius;
             colliderHeight = GetComponent<CapsuleCollider>().height;
+
+            if (tpCamera != null)
+            {
+                tpCamera.offSetPlayerPivot = offSetPivot;
+                tpCamera.playerTarget = transform;
+            }
+
+            cameraTransform.SendMessage("Init", SendMessageOptions.DontRequireReceiver);
+
+        }
+
+
+        public void ResetRagdoll()
+        {
+            tpCamera.offSetPlayerPivot = offSetPivot;
+            tpCamera.SetTarget(this.transform);
+            lockPlayer = false;
+            verticalVelocity = 0f;
+            ragdolled = false;
+        }
+
+        public void RagdollGettingUp()
+        {
+            _rigidbody.useGravity = true;
+            _rigidbody.isKinematic = false;
+            _capsuleCollider.enabled = true;
+        }
+
+        public void EnableRagdoll()
+        {
+            tpCamera.offSetPlayerPivot = 0f;
+            tpCamera.SetTarget(animator.GetBoneTransform(HumanBodyBones.Hips));
+            ragdolled = true;
+            _capsuleCollider.enabled = false;
+            _rigidbody.useGravity = false;
+            _rigidbody.isKinematic = true;
+            lockPlayer = true;
         }
     }
 }
