@@ -106,9 +106,9 @@ namespace GuiltyCharacter
             if (stateInfo.IsName("Action.QuickTurn180"))
             {
                 if (!animator.IsInTransition(0) && !ragdolled)
-                    //animator.MatchTarget(Vector3.one, cameraState.freeRotation, AvatarTarget.Root,
-                    //             new MatchTargetWeightMask(Vector3.zero, 1f),
-                    //             animator.GetCurrentAnimatorStateInfo(0).normalizedTime, 0.9f);
+                    animator.MatchTarget(Vector3.one, cameraState.freeRotation, AvatarTarget.Root,
+                                 new MatchTargetWeightMask(Vector3.zero, 1f),
+                                 animator.GetCurrentAnimatorStateInfo(0).normalizedTime, 0.9f);
 
                 if (stateInfo.normalizedTime >= 0.9f)
                     quickTurn180 = false;
