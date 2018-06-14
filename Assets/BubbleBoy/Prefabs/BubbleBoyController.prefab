@@ -338,6 +338,7 @@ GameObject:
   - component: {fileID: 136201655090571394}
   - component: {fileID: 54204365996047472}
   - component: {fileID: 114463981474761806}
+  - component: {fileID: 114327413256401316}
   m_Layer: 8
   m_Name: BubbleBoyController
   m_TagString: Player
@@ -445,6 +446,21 @@ GameObject:
   - component: {fileID: 4489507611033514}
   m_Layer: 0
   m_Name: metarig
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!1 &1546540524226472
+GameObject:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 4570592977895490}
+  m_Layer: 0
+  m_Name: handler@sword
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -965,7 +981,7 @@ Transform:
   m_GameObject: {fileID: 1545994621014504}
   m_LocalRotation: {x: -0.0000016280488, y: 0.7071068, z: 0.7071067, w: 0.0000016608647}
   m_LocalPosition: {x: 0, y: 0.019880524, z: -0.0162176}
-  m_LocalScale: {x: 100, y: 99.99997, z: 99.99997}
+  m_LocalScale: {x: 80, y: 80, z: 80}
   m_Children:
   - {fileID: 4313254502106094}
   m_Father: {fileID: 4594295483732814}
@@ -1014,6 +1030,19 @@ Transform:
   m_Father: {fileID: 4313254502106094}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!4 &4570592977895490
+Transform:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1546540524226472}
+  m_LocalRotation: {x: 0.67559016, y: 0, z: 0, w: 0.7372774}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 4631504083541814}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 85, y: 0, z: 0}
 --- !u!4 &4574240939419090
 Transform:
   m_ObjectHideFlags: 1
@@ -1033,7 +1062,7 @@ Transform:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1463384432340388}
-  m_LocalRotation: {x: 0, y: -1, z: 0, w: 0.000002324581}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
@@ -1064,7 +1093,8 @@ Transform:
   m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: -0, y: 0.0004625369, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
-  m_Children: []
+  m_Children:
+  - {fileID: 4570592977895490}
   m_Father: {fileID: 4976848096667928}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -1296,6 +1326,25 @@ Animator:
   m_WarningMessage: 
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
+--- !u!114 &114327413256401316
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1463384432340388}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1b3943fffd8a916419cf7ada79fb428a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  currentMeleeWeapon: {fileID: 0}
+  currentCollectableWeapon: {fileID: 0}
+  changeWeapon: 0
+  weaponHandlers:
+  - {fileID: 4570592977895490}
+  - {fileID: 4631504083541814}
+  - {fileID: 4631504083541814}
+  inAttack: 0
 --- !u!114 &114463981474761806
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -1307,6 +1356,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 620e57ae4d6e0c344bfe99b6c2b9c316, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  tpCamera: {fileID: 0}
   animator: {fileID: 0}
   frictionPhysics: {fileID: 0}
   slippyPhysics: {fileID: 0}
@@ -1364,39 +1414,20 @@ MonoBehaviour:
       input: 8
       staminaCost: 0.5
       recoveryDelay: 0.25
-  groundLayer:
-    serializedVersion: 2
-    m_Bits: 1
-  stopMoveLayer:
-    serializedVersion: 2
-    m_Bits: 0
-  stopMoveDistance: 0.5
-  locomotionType: 0
-  rotateByWorld: 0
-  rotationSpeed: 8
-  extraMoveSpeed: 1
-  extraStrafeSpeed: 1
-  groundCheckDistance: 0.5
-  stepOffsetEnd: 0.45
-  stepOffsetStart: 1.5
-  stepSmooth: 2
-  slopeLimit: 45
-  extraGravity: 4
-  landHighVel: -5
-  ragdollVel: -8
-  debugWindow: 1
-  timeScale: 1
-  customCameraState: 
-  customlookAtPoint: 
-  changeCameraState: 0
-  smoothCameraState: 0
-  freeRotation: {x: 0, y: 0, z: 0, w: 0}
-  keepDirection: 0
-  oldInput: {x: 0, y: 0}
-  cameraForward: {x: 0, y: 0, z: 0}
-  cameraRight: {x: 0, y: 0, z: 0}
+  mli: {fileID: 11400000, guid: 1d58777974c4ea94a823616cfba21eef, type: 2}
+  ci: {fileID: 11400000, guid: e2902b8b7cb24ab42b24ab315e442a4f, type: 2}
+  meleeManager: {fileID: 0}
+  cameraState:
+    customCameraState: 
+    customlookAtPoint: 
+    changeCameraState: 0
+    smoothCameraState: 0
+    freeRotation: {x: 0, y: 0, z: 0, w: 0}
+    keepDirection: 0
+    oldInput: {x: 0, y: 0}
+    cameraForward: {x: 0, y: 0, z: 0}
+    cameraRight: {x: 0, y: 0, z: 0}
   matchTarget: {fileID: 0}
-  lookAtWeight: 0
   oldSpeed: 0
 --- !u!136 &136201655090571394
 CapsuleCollider:
@@ -1425,7 +1456,7 @@ SkinnedMeshRenderer:
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
   m_Materials:
-  - {fileID: 2100000, guid: 670a2e572bb34604aa6f4f0b1c0e64f7, type: 3}
+  - {fileID: 2100000, guid: 4807f2921b1c6ae47917a54555ca0849, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0

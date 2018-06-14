@@ -14,10 +14,10 @@ MonoBehaviour:
   locomotionType: 0
   rotateByWorld: 0
   rotationSpeed: 8
-  extraMoveSpeed: 1
-  extraStrafeSpeed: 1
+  extraMoveSpeed: 1.2
+  extraStrafeSpeed: 1.2
   groundCheckDistance: 0.5
-  groundDistance: -0.00000011920929
+  groundDistance: -0.00000023841858
   stepOffsetEnd: 0.45
   stepOffsetStart: 0.05
   stepSmooth: 2
